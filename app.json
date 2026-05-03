@@ -1,14 +1,13 @@
 {
   "expo": {
-    "name": "TrungTran app tính tiền",
-    "slug": "trungtran-app-tinh-tien-",
+    "name": "Trung Tran App Tinh Tien",
+    "slug": "trungtran-app-tinh-tien",
     "version": "1.0.0",
     "android": {
-      "package": "com.trung2010kk.tinhtien"
-    },
-    "extra": {
-      "eas": {
-        "projectId": "58fb1922-da8f-4228-bcd0-4123ce9bf86a"
+      "package": "com.trungtran.tinhtien", // Chỗ này quan trọng, không được có dấu cách
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/adaptive-icon.png",
+        "backgroundColor": "#ffffff"
       }
     }
   }
