@@ -1,13 +1,32 @@
 {
   "expo": {
-    "name": "Trung Tran App Tinh Tien",
+    "name": "App Tinh Tien",
     "slug": "trungtran-app-tinh-tien",
     "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "userInterfaceStyle": "light",
+    "splash": {
+      "image": "./assets/splash.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#ffffff"
+    },
+    "assetBundlePatterns": [
+      "**/*"
+    ],
+    "ios": {
+      "supportsTablet": true
+    },
     "android": {
-      "package": "com.trungtran.tinhtien", // Chỗ này quan trọng, không được có dấu cách
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",
         "backgroundColor": "#ffffff"
+      },
+      "package": "com.trungtran.apptinhtien"
+    },
+    "extra": {
+      "eas": {
+        "projectId": "76161a0d-5872-4d2c-8f1b-272e77b677a2"
       }
     }
   }
