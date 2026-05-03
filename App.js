@@ -1,230 +1,154 @@
 import React, { useState, useEffect } from 'react';
 import { 
-  Plus, Trash2, History, Calculator, 
-  ArrowLeft, ShoppingCart, CheckCircle2, 
-  AlertCircle, RefreshCw
-} from 'lucide-react';
+  StyleSheet, Text, View, TextInput, TouchableOpacity, 
+  FlatList, Alert, SafeAreaView, StatusBar
+} from 'react-native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
-const App = () => {
-  // --- LƯU TRỮ TRÊN ĐIỆN THOẠI ---
-  const [orders, setOrders] = useState(() => {
+export default function App() {
+  const [items, setItems] = useState([]);
+  const [name, setName] = useState('');
+  const [price, setPrice] = useState('');
+  const [history, setHistory] = useState([]);
+  const [showHistory, setShowHistory] = useState(false);
+
+  useEffect(() => { loadData(); }, []);
+
+  const loadData = async () => {
     try {
-      const savedOrders = localStorage.getItem('trung_tran_mobile_app');
-      return savedOrders ? JSON.parse(savedOrders) : [];
-    } catch (e) {
-      return [];
+      const savedItems = await AsyncStorage.getItem('trung_items');
+      const savedHistory = await AsyncStorage.getItem('trung_history');
+      if (savedItems) setItems(JSON.parse(savedItems));
+      if (savedHistory) setHistory(JSON.parse(savedHistory));
+    } catch (e) { console.log("Lỗi tải"); }
+  };
+
+  const saveData = async (newItems, newHistory) => {
+    try {
+      await AsyncStorage.setItem('trung_items', JSON.stringify(newItems));
+      await AsyncStorage.setItem('trung_history', JSON.stringify(newHistory));
+    } catch (e) { console.log("Lỗi lưu"); }
+  };
+
+  const addItem = () => {
+    if (!name || !price) {
+      Alert.alert("Nhắc nhở", "Nhập tên và giá tiền đã anh iu!");
+      return;
     }
-  });
-
-  const [activeTab, setActiveTab] = useState('create');
-  const [showIntro, setShowIntro] = useState(true);
-  const [customerName, setCustomerName] = useState('');
-  const [selectedDesign, setSelectedDesign] = useState(null);
-  const [selectedPrint, setSelectedPrint] = useState([]);
-  const [discount, setDiscount] = useState(0);
-  const [showInvoice, setShowInvoice] = useState(false);
-  const [currentOrder, setCurrentOrder] = useState(null);
-
-  const designPackages = [
-    { id: 'd1', name: 'Gói Cơ Bản', price: 150000 },
-    { id: 'd2', name: 'Gói Nâng Cao', price: 350000 },
-    { id: 'd3', name: 'Gói Pro', price: 750000 }
-  ];
-
-  const printServices = [
-    { id: 'p1', name: 'Giấy C300', price: 2000 },
-    { id: 'p2', name: 'Giấy Decal', price: 3500 },
-    { id: 'p3', name: 'Giấy Mỹ Thuật', price: 8000 },
-    { id: 'p4', name: 'Bạt Hiflex', price: 45000 }
-  ];
-
-  useEffect(() => {
-    localStorage.setItem('trung_tran_mobile_app', JSON.stringify(orders));
-  }, [orders]);
-
-  useEffect(() => {
-    const timer = setTimeout(() => setShowIntro(false), 2000);
-    return () => clearTimeout(timer);
-  }, []);
-
-  const togglePrintService = (service) => {
-    const exists = selectedPrint.find(s => s.id === service.id);
-    if (exists) {
-      setSelectedPrint(selectedPrint.filter(s => s.id !== service.id));
-    } else {
-      setSelectedPrint([...selectedPrint, { ...service, quantity: 1 }]);
-    }
+    const updatedItems = [...items, { id: Date.now().toString(), name, price: parseInt(price) }];
+    setItems(updatedItems);
+    saveData(updatedItems, history);
+    setName(''); setPrice('');
   };
 
-  const calculateTotal = () => {
-    const designPrice = selectedDesign ? selectedDesign.price : 0;
-    const printPrice = selectedPrint.reduce((sum, s) => sum + (s.price * s.quantity), 0);
-    return { finalTotal: Math.max(0, designPrice + printPrice - discount) };
+  const checkout = () => {
+    if (items.length === 0) return;
+    const total = items.reduce((sum, item) => sum + item.price, 0);
+    const updatedHistory = [{ id: Date.now().toString(), date: new Date().toLocaleString('vi-VN'), total }, ...history];
+    setHistory(updatedHistory);
+    setItems([]);
+    saveData([], updatedHistory);
+    Alert.alert("Thành công", `Tổng tiền: ${total.toLocaleString()}đ\nĐã lưu vào lịch sử!`);
   };
-
-  const handleCompleteOrder = () => {
-    if (!customerName) return alert("Nhập tên khách đã anh ơi!");
-    const { finalTotal } = calculateTotal();
-    const newOrder = {
-      id: `ID${Date.now()}`,
-      date: new Date().toLocaleDateString('vi-VN'),
-      customer: customerName,
-      total: finalTotal
-    };
-    setOrders([newOrder, ...orders]);
-    setCurrentOrder(newOrder);
-    setShowInvoice(true);
-  };
-
-  if (showIntro) {
-    return (
-      <div className="fixed inset-0 bg-blue-600 flex flex-col items-center justify-center text-white">
-        <Calculator size={60} className="animate-bounce" />
-        <h1 className="text-xl font-black mt-4">TRUNG TRẦN MOBILE</h1>
-      </div>
-    );
-  }
 
   return (
-    <div className="min-h-screen bg-gray-100 font-sans text-gray-900 pb-24">
-      {/* Header gọn nhẹ cho Mobile */}
-      <div className="bg-white p-4 shadow-sm text-center font-bold text-blue-600 sticky top-0 z-20">
-        TRUNG TRẦN DESIGN
-      </div>
+    <SafeAreaView style={styles.container}>
+      <StatusBar barStyle="dark-content" />
+      
+      {/* Header */}
+      <View style={styles.header}>
+        <Text style={styles.headerTitle}>TRUNG TRẦN <Text style={{color: '#3498db'}}>DESIGN</Text></Text>
+        <TouchableOpacity style={styles.historyBtn} onPress={() => setShowHistory(!showHistory)}>
+          <Text style={styles.historyBtnText}>{showHistory ? "QUAY LẠI" : "LỊCH SỬ"}</Text>
+        </TouchableOpacity>
+      </View>
 
-      <div className="p-4">
-        {activeTab === 'create' ? (
-          <div className="space-y-4">
-            <input 
-              type="text" 
-              placeholder="Tên khách hàng..."
-              className="w-full p-4 rounded-2xl border-none shadow-sm outline-none"
-              value={customerName}
-              onChange={(e) => setCustomerName(e.target.value)}
-            />
+      {!showHistory ? (
+        <View style={styles.content}>
+          {/* Input Area */}
+          <View style={styles.card}>
+            <Text style={styles.label}>Tên sản phẩm/dịch vụ</Text>
+            <TextInput style={styles.input} placeholder="Ví dụ: In bạt Hiflex..." value={name} onChangeText={setName} />
+            <Text style={styles.label}>Giá tiền (VNĐ)</Text>
+            <TextInput style={styles.input} placeholder="0" value={price} keyboardType="numeric" onChangeText={setPrice} />
+            <TouchableOpacity style={styles.mainBtn} onPress={addItem}>
+              <Text style={styles.mainBtnText}>+ THÊM VÀO DANH SÁCH</Text>
+            </TouchableOpacity>
+          </View>
 
-            <div className="bg-white p-4 rounded-2xl shadow-sm">
-              <p className="text-xs font-bold text-gray-400 mb-3">CHỌN THIẾT KẾ</p>
-              <div className="space-y-2">
-                {designPackages.map(pkg => (
-                  <div 
-                    key={pkg.id}
-                    onClick={() => setSelectedDesign(selectedDesign?.id === pkg.id ? null : pkg)}
-                    className={`p-4 rounded-xl border-2 transition-all ${selectedDesign?.id === pkg.id ? 'border-blue-500 bg-blue-50' : 'border-gray-50'}`}
-                  >
-                    <div className="flex justify-between font-bold">
-                      <span>{pkg.name}</span>
-                      <span className="text-blue-600">{pkg.price.toLocaleString()}đ</span>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-
-            <div className="bg-white p-4 rounded-2xl shadow-sm">
-              <p className="text-xs font-bold text-gray-400 mb-3">DỊCH VỤ IN</p>
-              <div className="space-y-3">
-                {printServices.map(s => {
-                  const isSelected = selectedPrint.find(p => p.id === s.id);
-                  return (
-                    <div key={s.id} className="flex items-center justify-between">
-                      <div className="flex items-center" onClick={() => togglePrintService(s)}>
-                        <div className={`w-6 h-6 rounded-md border-2 mr-3 flex items-center justify-center ${isSelected ? 'bg-blue-500 border-blue-500' : 'border-gray-200'}`}>
-                          {isSelected && <div className="w-2 h-2 bg-white rounded-full"></div>}
-                        </div>
-                        <span className="text-sm font-medium">{s.name}</span>
-                      </div>
-                      {isSelected && (
-                        <input 
-                          type="number"
-                          className="w-16 p-1 bg-gray-100 rounded text-center font-bold"
-                          value={isSelected.quantity}
-                          onChange={(e) => {
-                            const val = parseInt(e.target.value) || 1;
-                            setSelectedPrint(selectedPrint.map(p => p.id === s.id ? {...p, quantity: val} : p));
-                          }}
-                        />
-                      )}
-                    </div>
-                  );
-                })}
-              </div>
-            </div>
-
-            <div className="bg-white p-4 rounded-2xl shadow-sm flex justify-between items-center">
-              <span className="text-sm font-bold">GIẢM GIÁ</span>
-              <input 
-                type="number"
-                className="w-24 p-2 bg-red-50 text-red-500 rounded text-right font-bold"
-                value={discount}
-                onChange={(e) => setDiscount(Number(e.target.value))}
-              />
-            </div>
-
-            <button 
-              onClick={handleCompleteOrder}
-              className="w-full bg-blue-600 text-white py-4 rounded-2xl font-black shadow-lg shadow-blue-200 active:scale-95"
-            >
-              XUẤT HÓA ĐƠN: {calculateTotal().finalTotal.toLocaleString()}đ
-            </button>
-          </div>
-        ) : (
-          <div className="space-y-3">
-            {orders.length === 0 ? (
-              <div className="text-center py-20 text-gray-400 font-medium">Chưa có đơn hàng nào</div>
-            ) : (
-              orders.map(o => (
-                <div key={o.id} className="bg-white p-4 rounded-2xl flex justify-between items-center">
-                  <div>
-                    <div className="font-bold text-gray-800">{o.customer}</div>
-                    <div className="text-[10px] text-gray-400">{o.date} - {o.total.toLocaleString()}đ</div>
-                  </div>
-                  <button onClick={() => setOrders(orders.filter(x => x.id !== o.id))} className="text-red-300 p-2">
-                    <Trash2 size={18} />
-                  </button>
-                </div>
-              ))
+          {/* List Area */}
+          <FlatList
+            data={items}
+            keyExtractor={(item) => item.id}
+            renderItem={({ item }) => (
+              <View style={styles.itemRow}>
+                <View>
+                  <Text style={styles.itemName}>{item.name}</Text>
+                  <Text style={styles.itemPrice}>{item.price.toLocaleString()}đ</Text>
+                </View>
+                <TouchableOpacity onPress={() => {
+                  const updated = items.filter(i => i.id !== item.id);
+                  setItems(updated); saveData(updated, history);
+                }}>
+                  <Text style={styles.deleteText}>Xóa</Text>
+                </TouchableOpacity>
+              </View>
             )}
-            {orders.length > 0 && (
-              <button onClick={() => setOrders([])} className="w-full text-xs text-gray-400 py-4 italic">Xóa toàn bộ lịch sử</button>
-            )}
-          </div>
-        )}
-      </div>
+          />
 
-      {/* Invoice Modal cho Mobile */}
-      {showInvoice && currentOrder && (
-        <div className="fixed inset-0 z-50 bg-white p-6 flex flex-col">
-          <button onClick={() => setShowInvoice(false)} className="mb-6"><ArrowLeft /></button>
-          <div className="flex-1 border-2 border-gray-100 rounded-3xl p-6 text-center space-y-6">
-            <CheckCircle2 size={60} className="mx-auto text-green-500" />
-            <h2 className="text-2xl font-black">THÀNH CÔNG!</h2>
-            <div className="space-y-2 py-6 border-y border-dashed">
-              <p className="text-gray-500 italic">Khách hàng: <span className="text-black font-bold not-italic">{currentOrder.customer}</span></p>
-              <p className="text-3xl font-black text-blue-600">{currentOrder.total.toLocaleString()}đ</p>
-            </div>
-            <p className="text-[10px] text-gray-400 italic">Đơn hàng đã được lưu tự động vào lịch sử hệ thống.</p>
-            <button 
-              onClick={() => { setCustomerName(''); setSelectedDesign(null); setSelectedPrint([]); setDiscount(0); setShowInvoice(false); }}
-              className="w-full bg-black text-white py-4 rounded-2xl font-bold"
-            >
-              TIẾP TỤC TẠO ĐƠN
-            </button>
-          </div>
-        </div>
+          {/* Footer Total */}
+          <View style={styles.footer}>
+            <View style={styles.totalContainer}>
+              <Text style={styles.totalLabel}>TỔNG CỘNG:</Text>
+              <Text style={styles.totalValue}>{items.reduce((sum, i) => sum + i.price, 0).toLocaleString()}đ</Text>
+            </View>
+            <TouchableOpacity style={styles.checkoutBtn} onPress={checkout}>
+              <Text style={styles.mainBtnText}>CHỐT ĐƠN & LƯU</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      ) : (
+        <View style={styles.content}>
+          <Text style={styles.subTitle}>Lịch sử thanh toán</Text>
+          <FlatList
+            data={history}
+            keyExtractor={(item) => item.id}
+            renderItem={({ item }) => (
+              <View style={styles.historyCard}>
+                <Text style={styles.historyDate}>{item.date}</Text>
+                <Text style={styles.historyTotal}>{item.total.toLocaleString()}đ</Text>
+              </View>
+            )}
+          />
+        </View>
       )}
-
-      {/* Nav đơn giản */}
-      <nav className="fixed bottom-0 left-0 right-0 bg-white border-t p-4 flex justify-around">
-        <button onClick={() => setActiveTab('create')} className={activeTab === 'create' ? 'text-blue-600' : 'text-gray-300'}>
-          <Plus size={28} />
-        </button>
-        <button onClick={() => setActiveTab('history')} className={activeTab === 'history' ? 'text-blue-600' : 'text-gray-300'}>
-          <History size={28} />
-        </button>
-      </nav>
-    </div>
+    </SafeAreaView>
   );
-};
+}
 
-export default App;
+const styles = StyleSheet.create({
+  container: { flex: 1, backgroundColor: '#F0F2F5' },
+  header: { flexDirection: 'row', justifyContent: 'space-between', padding: 20, backgroundColor: '#fff', alignItems: 'center', elevation: 4 },
+  headerTitle: { fontSize: 20, fontWeight: '900', color: '#2C3E50' },
+  historyBtn: { backgroundColor: '#E8F4FD', paddingHorizontal: 15, paddingVertical: 8, borderRadius: 20 },
+  historyBtnText: { color: '#3498db', fontWeight: 'bold', fontSize: 12 },
+  content: { flex: 1, padding: 15 },
+  card: { backgroundColor: '#fff', padding: 20, borderRadius: 15, marginBottom: 20, elevation: 2 },
+  label: { fontSize: 12, color: '#95A5A6', fontWeight: 'bold', marginBottom: 5 },
+  input: { backgroundColor: '#F8F9FA', borderRadius: 10, padding: 12, marginBottom: 15, fontSize: 16, borderWidth: 1, borderColor: '#EDF2F7' },
+  mainBtn: { backgroundColor: '#3498db', padding: 15, borderRadius: 12, alignItems: 'center' },
+  mainBtnText: { color: '#fff', fontWeight: 'bold', fontSize: 16 },
+  itemRow: { flexDirection: 'row', justifyContent: 'space-between', backgroundColor: '#fff', padding: 15, borderRadius: 12, marginBottom: 10, alignItems: 'center', borderLeftWidth: 5, borderLeftColor: '#3498db' },
+  itemName: { fontSize: 15, fontWeight: 'bold', color: '#2C3E50' },
+  itemPrice: { fontSize: 14, color: '#7F8C8D' },
+  deleteText: { color: '#E74C3C', fontWeight: 'bold' },
+  footer: { backgroundColor: '#fff', padding: 20, borderTopLeftRadius: 25, borderTopRightRadius: 25, elevation: 10 },
+  totalContainer: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 15, alignItems: 'center' },
+  totalLabel: { fontSize: 16, fontWeight: 'bold', color: '#95A5A6' },
+  totalValue: { fontSize: 24, fontWeight: '900', color: '#2C3E50' },
+  checkoutBtn: { backgroundColor: '#2ECC71', padding: 15, borderRadius: 12, alignItems: 'center' },
+  subTitle: { fontSize: 18, fontWeight: 'bold', marginBottom: 15, color: '#2C3E50' },
+  historyCard: { backgroundColor: '#fff', padding: 15, borderRadius: 12, marginBottom: 10, borderLeftWidth: 5, borderLeftColor: '#2ECC71' },
+  historyDate: { fontSize: 12, color: '#95A5A6' },
+  historyTotal: { fontSize: 18, fontWeight: 'bold', color: '#2C3E50', marginTop: 5 }
+});
