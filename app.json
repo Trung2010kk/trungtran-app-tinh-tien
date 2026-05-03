@@ -5,6 +5,11 @@
     "version": "1.0.0",
     "android": {
       "package": "com.trung2010kk.tinhtien"
+    },
+    "extra": {
+      "eas": {
+        "projectId": "1c099496-e910-47b2-8495-2259648981b2"
+      }
     }
   }
 }
