@@ -54,8 +54,6 @@ export default function App() {
   return (
     <SafeAreaView style={styles.container}>
       <StatusBar barStyle="dark-content" />
-      
-      {/* Header */}
       <View style={styles.header}>
         <Text style={styles.headerTitle}>TRUNG TRẦN <Text style={{color: '#3498db'}}>DESIGN</Text></Text>
         <TouchableOpacity style={styles.historyBtn} onPress={() => setShowHistory(!showHistory)}>
@@ -65,18 +63,16 @@ export default function App() {
 
       {!showHistory ? (
         <View style={styles.content}>
-          {/* Input Area */}
           <View style={styles.card}>
             <Text style={styles.label}>Tên sản phẩm/dịch vụ</Text>
             <TextInput style={styles.input} placeholder="Ví dụ: In bạt Hiflex..." value={name} onChangeText={setName} />
             <Text style={styles.label}>Giá tiền (VNĐ)</Text>
             <TextInput style={styles.input} placeholder="0" value={price} keyboardType="numeric" onChangeText={setPrice} />
             <TouchableOpacity style={styles.mainBtn} onPress={addItem}>
-              <Text style={styles.mainBtnText}>+ THÊM VÀO DANH SÁCH</Text>
+              <Text style={styles.mainBtnText}>+ THÊM VÀO GIỎ</Text>
             </TouchableOpacity>
           </View>
 
-          {/* List Area */}
           <FlatList
             data={items}
             keyExtractor={(item) => item.id}
@@ -96,14 +92,13 @@ export default function App() {
             )}
           />
 
-          {/* Footer Total */}
           <View style={styles.footer}>
             <View style={styles.totalContainer}>
               <Text style={styles.totalLabel}>TỔNG CỘNG:</Text>
               <Text style={styles.totalValue}>{items.reduce((sum, i) => sum + i.price, 0).toLocaleString()}đ</Text>
             </View>
             <TouchableOpacity style={styles.checkoutBtn} onPress={checkout}>
-              <Text style={styles.mainBtnText}>CHỐT ĐƠN & LƯU</Text>
+              <Text style={styles.mainBtnText}>THANH TOÁN</Text>
             </TouchableOpacity>
           </View>
         </View>
