@@ -1,7 +1,7 @@
 {
   "expo": {
     "name": "TrungTran app tính tiền",
-    "slug": "trungtran-app-tinh-tien",
+    "slug": "trungtran-app-tinh-tien-",
     "version": "1.0.0",
     "android": {
       "package": "com.trung2010kk.tinhtien"
